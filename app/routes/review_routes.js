@@ -34,7 +34,7 @@ const router = express.Router()
 
 // INDEX
 // GET /examples
-router.get('/items/:id/reviews', requireToken, (req, res, next) => {
+router.get('/items/:id/reviews', (req, res, next) => {
   Review.find()
     .then(reviews => {
       // `examples` will be an array of Mongoose documents
@@ -50,9 +50,10 @@ router.get('/items/:id/reviews', requireToken, (req, res, next) => {
 
 // SHOW
 // GET /examples/5a7db6c74d55bc51bdf39793
-router.get('/items/:id/reviews/:rid', requireToken, (req, res, next) => {
+router.get('/items/:id/reviews/:rid', (req, res, next) => {
   // req.params.id will be set based on the `:id` in the route
-  Review.findById(req.params.id)
+  console.log(req.params.rid)
+  Review.findById(req.params.rid)
     .then(handle404)
     // if `findById` is succesful, respond with 200 and "example" JSON
     .then(review => res.status(200).json({ review: review.toObject() }))
@@ -68,26 +69,40 @@ router.post('/items/:id/reviews', requireToken, upload.single('upload'), (req, r
   // console.log(req.user)
   const itemId = req.params.id
 
-  fileUploadApi(req.file)
-    .then(s3Response => {
-      const reviewUploadParams = {
-        name: s3Response.Key,
-        rating: req.body.rating,
-        fileType: req.file.mimetype,
-        url: s3Response.Location,
-        owner: req.user
-      }
-      return Review.create(reviewUploadParams)
-    })
-    .then(review => {
-      res.status(201).json({ review: review.toObject() })
-      Item.findById(itemId)
-        .then(item => {
-          item.reviews.push(review)
-          item.save()
-        })
-    })
-    .catch(next)
+  if (req.file) {
+    fileUploadApi(req.file)
+      .then(s3Response => {
+        const reviewUploadParams = {
+          name: s3Response.Key,
+          rating: req.body.rating,
+          fileType: req.file.mimetype,
+          url: s3Response.Location,
+          owner: req.user
+        }
+        return Review.create(reviewUploadParams)
+      })
+      .then(review => {
+        res.status(201).json({ review: review.toObject() })
+        Item.findById(itemId)
+          .then(item => {
+            item.reviews.push(review)
+            item.save()
+          })
+      })
+      .catch(next)
+  } else {
+    req.body.review.owner = req.user.id
+    Review.create(req.body.review)
+      .then(review => {
+        res.status(201).json({ review: review.toObject() })
+        Item.findById(itemId)
+          .then(item => {
+            item.reviews.push(review)
+            item.save()
+          })
+      })
+      .catch(next)
+  }
 })
 
 // UPDATE
@@ -95,15 +110,13 @@ router.post('/items/:id/reviews', requireToken, upload.single('upload'), (req, r
 router.patch('/items/:id/reviews/:rid', requireToken, removeBlanks, (req, res, next) => {
   // if the client attempts to change the `owner` property by including a new
   // owner, prevent that by deleting that key/value pair
-  delete req.body.review.owner
-
-  Review.findById(req.params.id)
+  delete req.body.owner
+  Review.findById(req.params.rid)
     .then(handle404)
     .then(review => {
       // pass the `req` object and the Mongoose record to `requireOwnership`
       // it will throw an error if the current user isn't the owner
       requireOwnership(req, review)
-
       // pass the result of Mongoose's `.update` to the next `.then`
       return review.updateOne(req.body.review)
     })
@@ -116,7 +129,7 @@ router.patch('/items/:id/reviews/:rid', requireToken, removeBlanks, (req, res, n
 // DESTROY
 // DELETE /examples/5a7db6c74d55bc51bdf39793
 router.delete('/items/:id/reviews/:rid', requireToken, (req, res, next) => {
-  Review.findById(req.params.id)
+  Review.findById(req.params.rid)
     .then(handle404)
     .then(review => {
       // throw an error if current user doesn't own `example`

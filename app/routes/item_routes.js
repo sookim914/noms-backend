@@ -15,7 +15,7 @@ const customErrors = require('../../lib/custom_errors')
 const handle404 = customErrors.handle404
 // we'll use this function to send 401 when a user tries to modify a resource
 // that's owned by someone else
-const requireOwnership = customErrors.requireOwnership
+// const requireOwnership = customErrors.requireOwnership
 
 // this is middleware that will remove blank fields from `req.body`, e.g.
 // { item: { title: '', text: 'foo' } } -> { item: { text: 'foo' } }
@@ -49,6 +49,7 @@ router.get('/items', (req, res, next) => {
 router.get('/items/:id', (req, res, next) => {
   // req.params.id will be set based on the `:id` in the route
   Item.findById(req.params.id)
+    .populate('reviews')
     .then(handle404)
     // if `findById` is succesful, respond with 200 and "item" JSON
     .then(item => res.status(200).json({ item: item.toObject() }))
@@ -95,7 +96,7 @@ router.patch('/items/:id', removeBlanks, (req, res, next) => {
     .then(item => {
       // pass the `req` object and the Mongoose record to `requireOwnership`
       // it will throw an error if the current user isn't the owner
-      requireOwnership(req, item)
+      // requireOwnership(req, item)
 
       // pass the result of Mongoose's `.update` to the next `.then`
       return item.updateOne(req.body.item)
@@ -113,7 +114,7 @@ router.delete('/items/:id', (req, res, next) => {
     .then(handle404)
     .then(item => {
       // throw an error if current user doesn't own `item`
-      requireOwnership(req, item)
+      // requireOwnership(req, item)
       // delete the item ONLY IF the above didn't throw
       item.deleteOne()
     })
