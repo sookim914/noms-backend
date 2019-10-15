@@ -33,20 +33,20 @@ const requireToken = passport.authenticate('bearer', { session: false })
 const router = express.Router()
 
 // INDEX
-// GET /examples
-router.get('/items/:id/reviews', (req, res, next) => {
-  Review.find()
-    .then(reviews => {
-      // `examples` will be an array of Mongoose documents
-      // we want to convert each one to a POJO, so we use `.map` to
-      // apply `.toObject` to each one
-      return reviews.map(review => review.toObject())
-    })
-    // respond with status 200 and JSON of the examples
-    .then(reviews => res.status(200).json({ reviews: reviews }))
-    // if an error occurs, pass it to the handler
-    .catch(next)
-})
+// // GET /examples
+// router.get('/items/:id/reviews', (req, res, next) => {
+//   Item.findById(req.params.id)
+//     .then(item => {
+//       // `examples` will be an array of Mongoose documents
+//       // we want to convert each one to a POJO, so we use `.map` to
+//       // apply `.toObject` to each one
+//       return item.reviews.map(review => review.toObject())
+//     })
+//     // respond with status 200 and JSON of the examples
+//     .then(reviews => res.status(200).json({ reviews: reviews }))
+//     // if an error occurs, pass it to the handler
+//     .catch(next)
+// })
 
 // SHOW
 // GET /examples/5a7db6c74d55bc51bdf39793

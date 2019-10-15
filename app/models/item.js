@@ -6,10 +6,8 @@ const itemSchema = new mongoose.Schema({
     required: true
   },
   reviews: [{
-    review_id: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Review'
-    }
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Review'
   }]
 })
 

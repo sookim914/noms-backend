@@ -49,9 +49,13 @@ router.get('/items', (req, res, next) => {
 router.get('/items/:id', (req, res, next) => {
   // req.params.id will be set based on the `:id` in the route
   Item.findById(req.params.id)
+    .populate('reviews')
     .then(handle404)
     // if `findById` is succesful, respond with 200 and "item" JSON
-    .then(item => res.status(200).json({ item: item.toObject() }))
+    .then(item => {
+      res.status(200).json({ item: item.toObject() })
+      console.log(item)
+    })
     // if an error occurs, pass it to the handler
     .catch(next)
 })
