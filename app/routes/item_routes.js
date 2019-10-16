@@ -124,7 +124,7 @@ router.delete('/items/:id', (req, res, next) => {
       // throw an error if current user doesn't own `item`
       // requireOwnership(req, item)
       // delete the item ONLY IF the above didn't throw
-      item.deleteOne()
+      item.remove()
     })
     // send back 204 and no content if the deletion succeeded
     .then(() => res.sendStatus(204))

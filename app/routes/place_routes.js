@@ -104,7 +104,7 @@ router.delete('/places/:id', (req, res, next) => {
       // throw an error if current user doesn't own `place`
       // requireOwnership(req, place)
       // delete the place ONLY IF the above didn't throw
-      place.deleteOne()
+      place.remove()
     })
     // send back 204 and no content if the deletion succeeded
     .then(() => res.sendStatus(204))
