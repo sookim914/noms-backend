@@ -63,7 +63,7 @@ router.get('/items/:id/reviews/:rid', (req, res, next) => {
 
 // CREATE
 // POST /fileUploads
-router.post('/items/:id/reviews', requireToken, upload.single('upload'), (req, res, next) => {
+router.post('/items/:id/reviews', requireToken, upload.single('url'), (req, res, next) => {
   // console.log('here', req.body)
   // req.review.owner = req.user.id
   // console.log(req.user)
@@ -75,7 +75,6 @@ router.post('/items/:id/reviews', requireToken, upload.single('upload'), (req, r
         const reviewUploadParams = {
           name: s3Response.Key,
           rating: req.body.rating,
-          fileType: req.file.mimetype,
           url: s3Response.Location,
           owner: req.user
         }
@@ -91,8 +90,8 @@ router.post('/items/:id/reviews', requireToken, upload.single('upload'), (req, r
       })
       .catch(next)
   } else {
-    req.body.review.owner = req.user.id
-    Review.create(req.body.review)
+    req.body.owner = req.user.id
+    Review.create(req.body)
       .then(review => {
         res.status(201).json({ review: review.toObject() })
         Item.findById(itemId)
@@ -134,9 +133,16 @@ router.delete('/items/:id/reviews/:rid', requireToken, (req, res, next) => {
     .then(review => {
       // throw an error if current user doesn't own `example`
       requireOwnership(req, review)
-      review.deleteOne()
+      return review.remove()
     })
-    .then(() => res.sendStatus(204))
+    .then(review => {
+      Item.findById(req.params.id)
+        .then(item => {
+          item.reviews.pull(req.params.rid)
+          item.save()
+        })
+      res.sendStatus(204)
+    })
     .catch(next)
 })
 
