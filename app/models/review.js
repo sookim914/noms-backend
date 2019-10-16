@@ -8,10 +8,6 @@ const reviewSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  fileType: {
-    type: String
-    // required: true
-  },
   url: {
     type: String
     // required: true
