@@ -51,10 +51,7 @@ router.get('/places/:id', (req, res, next) => {
     .populate('items')
     .then(handle404)
     // if `findById` is succesful, respond with 200 and "place" JSON
-    .then(place => {
-      res.status(200).json({ place: place.toObject() })
-      place.populate('items')
-    })
+    .then(place => res.status(200).json({ place: place.toObject() }))
     // if an error occurs, pass it to the handler
     .catch(next)
 })
