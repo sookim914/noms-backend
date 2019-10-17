@@ -106,25 +106,47 @@ router.post('/items/:id/reviews', requireToken, upload.single('url'), (req, res,
 
 // UPDATE
 // PATCH /examples/5a7db6c74d55bc51bdf39793
-router.patch('/items/:id/reviews/:rid', requireToken, removeBlanks, (req, res, next) => {
+router.patch('/items/:id/reviews/:rid', upload.single('url'), requireToken, removeBlanks, (req, res, next) => {
   // if the client attempts to change the `owner` property by including a new
   // owner, prevent that by deleting that key/value pair
   delete req.body.owner
-  Review.findById(req.params.rid)
-    .then(handle404)
-    .then(review => {
-      // pass the `req` object and the Mongoose record to `requireOwnership`
-      // it will throw an error if the current user isn't the owner
-      requireOwnership(req, review)
-      // pass the result of Mongoose's `.update` to the next `.then`
-      return review.updateOne(req.body.review)
-    })
-    // if that succeeded, return 204 and no JSON
-    .then(() => res.sendStatus(204))
-    // if an error occurs, pass it to the handler
-    .catch(next)
+  if (req.file) {
+    Review.findById(req.params.rid)
+      .then(handle404)
+      .then(review => {
+        // pass the `req` object and the Mongoose record to `requireOwnership`
+        // it will throw an error if the current user isn't the owner
+        requireOwnership(req, review)
+        // pass the result of Mongoose's `.update` to the next `.then`
+        fileUploadApi(req.file)
+          .then(s3Response => {
+            const reviewUploadParams = {
+              name: s3Response.Key,
+              rating: req.body.rating,
+              url: s3Response.Location,
+              owner: req.user
+            }
+            review.set(reviewUploadParams)
+            review.save()
+          })
+      })
+      // if that succeeded, return 204 and no JSON
+      .then((review) => res.status(204))
+      // if an error occurs, pass it to the handler
+      .catch(next)
+  } else {
+    req.body.owner = req.user.id
+    Review.findById(req.params.rid)
+      .then(handle404)
+      .then(review => {
+        requireOwnership(req, review)
+        review.set(req.body)
+        return review.save()
+      })
+      .then(() => res.sendStatus(204))
+      .catch(next)
+  }
 })
-
 // DESTROY
 // DELETE /examples/5a7db6c74d55bc51bdf39793
 router.delete('/items/:id/reviews/:rid', requireToken, (req, res, next) => {
