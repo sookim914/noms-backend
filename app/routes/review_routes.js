@@ -9,7 +9,7 @@ const upload = multer({ storage: multer.memoryStorage() })
 const Review = require('../models/review')
 const Item = require('../models/item')
 
-const fileUploadApi = require('../../lib/fileUploadApi')
+const { fileUploadApi, s3Delete } = require('../../lib/fileUploadApi')
 
 // this is a collection of methods that help us detect situations when we need
 // to throw a custom error
@@ -111,29 +111,26 @@ router.patch('/items/:id/reviews/:rid', upload.single('url'), requireToken, remo
   // owner, prevent that by deleting that key/value pair
   delete req.body.owner
   if (req.file) {
-    Review.findById(req.params.rid)
-      .then(handle404)
-      .then(review => {
-        // pass the `req` object and the Mongoose record to `requireOwnership`
-        // it will throw an error if the current user isn't the owner
-        requireOwnership(req, review)
-        // pass the result of Mongoose's `.update` to the next `.then`
-        fileUploadApi(req.file)
-          .then(s3Response => {
-            const reviewUploadParams = {
-              name: s3Response.Key,
-              rating: req.body.rating,
-              url: s3Response.Location,
-              owner: req.user
+    fileUploadApi(req.file)
+      .then(s3Response => {
+        Review.findById(req.params.rid)
+          .then(handle404)
+          .then(review => {
+            requireOwnership(req, review)
+            if (review.url) {
+              s3Delete({
+                Bucket: process.env.nomsbucket,
+                Key: review.url.split('/').pop()
+              })
             }
-            review.set(reviewUploadParams)
-            review.save()
+            return review.update({
+              ...req.body,
+              url: s3Response.Location
+            })
           })
+          .then(() => res.sendStatus(204))
+          .catch(next)
       })
-      // if that succeeded, return 204 and no JSON
-      .then((review) => res.status(204))
-      // if an error occurs, pass it to the handler
-      .catch(next)
   } else {
     req.body.owner = req.user.id
     Review.findById(req.params.rid)
@@ -147,6 +144,48 @@ router.patch('/items/:id/reviews/:rid', upload.single('url'), requireToken, remo
       .catch(next)
   }
 })
+
+// router.patch('/items/:id/reviews/:rid', upload.single('url'), requireToken, removeBlanks, (req, res, next) => {
+//   // if the client attempts to change the `owner` property by including a new
+//   // owner, prevent that by deleting that key/value pair
+//   delete req.body.owner
+//   if (req.file) {
+//     Review.findById(req.params.rid)
+//       .then(handle404)
+//       .then(review => {
+//         // pass the `req` object and the Mongoose record to `requireOwnership`
+//         // it will throw an error if the current user isn't the owner
+//         requireOwnership(req, review)
+//         // pass the result of Mongoose's `.update` to the next `.then`
+//         fileUploadApi(req.file)
+//           .then(s3Response => {
+//             const reviewUploadParams = {
+//               name: s3Response.Key,
+//               rating: req.body.rating,
+//               url: s3Response.Location,
+//               owner: req.user
+//             }
+//             review.set(reviewUploadParams)
+//             review.save()
+//           })
+//       })
+//       // if that succeeded, return 204 and no JSON
+//       .then((review) => res.status(204))
+//       // if an error occurs, pass it to the handler
+//       .catch(next)
+//   } else {
+//     req.body.owner = req.user.id
+//     Review.findById(req.params.rid)
+//       .then(handle404)
+//       .then(review => {
+//         requireOwnership(req, review)
+//         review.set(req.body)
+//         return review.save()
+//       })
+//       .then(() => res.sendStatus(204))
+//       .catch(next)
+//   }
+// })
 // DESTROY
 // DELETE /examples/5a7db6c74d55bc51bdf39793
 router.delete('/items/:id/reviews/:rid', requireToken, (req, res, next) => {
