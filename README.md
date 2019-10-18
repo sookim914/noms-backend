@@ -7,10 +7,10 @@ For this project, I created a MERN (MongoDB, Express, React, Nodejs) stack app c
 - <a href=https://sookim914.github.io/noms/>Noms</a>
 
 ### Technologies used
--MongoDB
--mongoose
--express
--AWS
+- MongoDB
+- mongoose
+- express
+- AWS
 
 ### Routes
 
