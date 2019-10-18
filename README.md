@@ -22,10 +22,10 @@ For this project, I created a MERN (MongoDB, Express, React, Nodejs) stack app c
 
 
 `review routes`
--`/items/:id`: GET for index of reviews for the dish(item)
--`/items/:id/reviews/`: POST for creating the review
--`/items/:id/reviews/:rid`: PATCH for updating the review (requires ownership)
--`/items/:id/reviews/:rid`: DELETE for deleting the review
+- `/items/:id`: GET for index of reviews for the dish(item)
+- `/items/:id/reviews/`: POST for creating the review
+- `/items/:id/reviews/:rid`: PATCH for updating the review (requires ownership)
+- `/items/:id/reviews/:rid`: DELETE for deleting the review
 
 ### Set up and installation
 1. npm install to install dependencies
