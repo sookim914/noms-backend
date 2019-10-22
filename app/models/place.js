@@ -8,7 +8,12 @@ const placeSchema = new mongoose.Schema({
   items: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Item'
-  }]
+  }],
+  owner: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  }
 })
 
 module.exports = mongoose.model('Place', placeSchema)
