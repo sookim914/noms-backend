@@ -3,6 +3,9 @@ const express = require('express')
 // Passport docs: http://www.passportjs.org/docs/
 const passport = require('passport')
 
+require('dotenv').config()
+
+const axios = require('axios')
 // pull in Mongoose model for places
 const Place = require('../models/place')
 
@@ -60,15 +63,48 @@ router.get('/places/:id', (req, res, next) => {
 // POST /places
 router.post('/places', requireToken, (req, res, next) => {
   // set owner of new place to be current user
-  req.body.place.owner = req.user.id
-
-  Place.create(req.body.place)
-    // respond to succesful `create` with status 201 and JSON of new "place"
-    .then(place => {
-      res.status(201).json({ place: place.toObject() })
+  req.body.query.owner = req.user.id
+  axios({
+    method: 'GET',
+    url: 'https://api.foursquare.com/v2/venues/search',
+    params: {
+      client_id: process.env.CLIENT_ID,
+      v: '20190425',
+      near: 'Boston',
+      limit: 10,
+      categoryId: '4d4b7105d754a06374d81259',
+      query: req.body.query,
+      client_secret: process.env.CLIENT_SECRET
+    }
+    // get the data from foursquare
+  }).then(fsresponse => {
+    // return the data.response.venues in array
+    return fsresponse.data.response.venues
+  })
+  // do forEach interation to go through each index and create a place using name, id, address, and owner
+    .then(array => {
+      const newArray =
+      array.map(place => {
+        return Place.findOne({place_id: place.id})
+          .then((result) => {
+            if (result) {
+              return result
+            } else {
+              return Place.create({
+                name: place.name,
+                place_id: place.id,
+                address: (place.location.formattedAddress).join(', '),
+                owner: req.user.id
+              })
+            }
+          })
+      })
+      return newArray
     })
-    // if an error occurs, pass it off to our error handler
-    // the error handler needs the error message and the `res` object so that it
+    .then(newArray => {
+      Promise.all(newArray).then((thisarray) =>
+        res.status(201).json(thisarray))
+    })
     // can send an error message back to the client
     .catch(next)
 })
