@@ -34,7 +34,7 @@ const router = express.Router()
 
 // INDEX
 // // GET /examples
-// router.get('/items/:id/reviews', (req, res, next) => {
+// router.get('/reviews', (req, res, next) => {
 //   Item.findById(req.params.id)
 //     .then(item => {
 //       // `examples` will be an array of Mongoose documents
@@ -76,7 +76,8 @@ router.post('/items/:id/reviews', requireToken, upload.single('upload'), (req, r
           name: s3Response.Key,
           rating: req.body.rating,
           url: s3Response.Location,
-          owner: req.user
+          owner: req.user,
+          comment: req.body.comment
         }
         return Review.create(reviewUploadParams)
       })
