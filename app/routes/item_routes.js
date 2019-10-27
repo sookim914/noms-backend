@@ -49,7 +49,6 @@ router.get('/items', (req, res, next) => {
 router.get('/items/:id', (req, res, next) => {
   // req.params.id will be set based on the `:id` in the route
   Item.findById(req.params.id)
-    // .populate('reviews')
     .populate({
       path: 'owner reviews',
       populate: {
@@ -70,7 +69,6 @@ router.get('/items/:id', (req, res, next) => {
 router.post('/places/:id/items', requireToken, (req, res, next) => {
   const placeId = req.params.id
   req.body.item.owner = req.user.id
-
   Item.create(req.body.item)
     // respond to succesful `create` with status 201 and JSON of new "item"
     .then(item => {
