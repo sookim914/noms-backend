@@ -107,7 +107,7 @@ router.post('/items/:id/reviews', requireToken, upload.single('upload'), (req, r
 
 // UPDATE
 // PATCH /examples/5a7db6c74d55bc51bdf39793
-router.patch('/items/:id/reviews/:rid', upload.single('url'), requireToken, removeBlanks, (req, res, next) => {
+router.patch('/items/:id/reviews/:rid', upload.single('upload'), requireToken, removeBlanks, (req, res, next) => {
   // if the client attempts to change the `owner` property by including a new
   // owner, prevent that by deleting that key/value pair
   delete req.body.owner
