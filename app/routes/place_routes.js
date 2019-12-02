@@ -75,10 +75,10 @@ router.post('/places', requireToken, (req, res, next) => {
     params: {
       client_id: process.env.CLIENT_ID,
       v: '20190425',
-      near: 'Boston',
+      ll: req.body.latlong,
       limit: 12,
       categoryId: '4d4b7105d754a06374d81259',
-      query: req.body.query,
+      query: req.body.query.query,
       client_secret: process.env.CLIENT_SECRET
     }
     // get the data from foursquare
