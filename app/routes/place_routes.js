@@ -11,10 +11,10 @@ const Place = require('../models/place')
 
 // this is a collection of methods that help us detect situations when we need
 // to throw a custom error
-const customErrors = require('../../lib/custom_errors')
+// const customErrors = require('../../lib/custom_errors')
 
 // we'll use this function to send 404 when non-existant document is requested
-const handle404 = customErrors.handle404
+// const handle404 = customErrors.handle404
 // we'll use this function to send 401 when a user tries to modify a resource
 // that's owned by someone else
 // const requireOwnership = customErrors.requireOwnership
@@ -29,40 +29,6 @@ const requireToken = passport.authenticate('bearer', { session: false })
 
 // instantiate a router (mini app that only handles routes)
 const router = express.Router()
-
-// INDEX
-// GET /places
-// router.get('/places', (req, res, next) => {
-//   Place.find()
-//     .then(places => {
-//       // `places` will be an array of Mongoose documents
-//       // we want to convert each one to a POJO, so we use `.map` to
-//       // apply `.toObject` to each one
-//       return places.map(place => place.toObject())
-//     })
-//     // respond with status 200 and JSON of the places
-//     .then(places => res.status(200).json({ places: places }))
-//     // if an error occurs, pass it to the handler
-//     .catch(next)
-// })
-
-// SHOW
-// GET /places/5a7db6c74d55bc51bdf39793
-router.get('/places/:id', (req, res, next) => {
-  // req.params.id will be set based on the `:id` in the route
-  Place.findById(req.params.id)
-    .populate({
-      path: 'reviews items',
-      populate: {
-        path: 'reviews'
-      }
-    })
-    .then(handle404)
-    // if `findById` is succesful, respond with 200 and "place" JSON
-    .then(place => res.status(200).json({ place: place.toObject() }))
-    // if an error occurs, pass it to the handler
-    .catch(next)
-})
 
 // CREATE
 // POST /places

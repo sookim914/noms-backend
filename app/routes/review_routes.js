@@ -32,31 +32,23 @@ const requireToken = passport.authenticate('bearer', { session: false })
 // instantiate a router (mini app that only handles routes)
 const router = express.Router()
 
-// INDEX
-// // GET /examples
-// router.get('/reviews', (req, res, next) => {
-//   Item.findById(req.params.id)
-//     .then(item => {
-//       // `examples` will be an array of Mongoose documents
-//       // we want to convert each one to a POJO, so we use `.map` to
-//       // apply `.toObject` to each one
-//       return item.reviews.map(review => review.toObject())
-//     })
-//     // respond with status 200 and JSON of the examples
-//     .then(reviews => res.status(200).json({ reviews: reviews }))
-//     // if an error occurs, pass it to the handler
-//     .catch(next)
-// })
-
 // SHOW
-// GET /examples/5a7db6c74d55bc51bdf39793
-router.get('/items/:id/reviews/:rid', (req, res, next) => {
+// GET /items/5a7db6c74d55bc51bdf39793
+// get all the reviews belong to the item
+router.get('/items/:id', (req, res, next) => {
   // req.params.id will be set based on the `:id` in the route
-  console.log(req.params.rid)
-  Review.findById(req.params.rid)
-    .then(handle404)
-    // if `findById` is succesful, respond with 200 and "example" JSON
-    .then(review => res.status(200).json({ review: review.toObject() }))
+  Item.findById(req.params.id)
+    .populate({
+      path: 'owner reviews',
+      populate: {
+        path: 'owner'
+      }
+    })
+    // .execPopulate()
+    // if `findById` is succesful, respond with 200 and "item" JSON
+    .then(item => {
+      res.status(200).json({ item: item.toObject() })
+    })
     // if an error occurs, pass it to the handler
     .catch(next)
 })
@@ -107,6 +99,7 @@ router.post('/items/:id/reviews', requireToken, upload.single('upload'), (req, r
 
 // UPDATE
 // PATCH /examples/5a7db6c74d55bc51bdf39793
+// update the review
 router.patch('/items/:id/reviews/:rid', upload.single('upload'), requireToken, removeBlanks, (req, res, next) => {
   // if the client attempts to change the `owner` property by including a new
   // owner, prevent that by deleting that key/value pair
