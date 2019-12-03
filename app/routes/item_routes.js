@@ -6,6 +6,7 @@ const passport = require('passport')
 // pull in Mongoose model for items
 const Item = require('../models/item')
 const Place = require('../models/place')
+const axios = require('axios')
 
 // this is a collection of methods that help us detect situations when we need
 // to throw a custom error
@@ -28,44 +29,81 @@ const requireToken = passport.authenticate('bearer', { session: false })
 // instantiate a router (mini app that only handles routes)
 const router = express.Router()
 
-// INDEX
-// GET /items
-router.get('/items', (req, res, next) => {
-  Item.find()
-    .then(items => {
-      // `items` will be an array of Mongoose documents
-      // we want to convert each one to a POJO, so we use `.map` to
-      // apply `.toObject` to each one
-      return items.map(item => item.toObject())
-    })
-    // respond with status 200 and JSON of the items
-    .then(items => res.status(200).json({ items: items }))
-    // if an error occurs, pass it to the handler
-    .catch(next)
-})
-
 // SHOW
-// GET /items/5a7db6c74d55bc51bdf39793
-router.get('/items/:id', (req, res, next) => {
+// GET /places/5a7db6c74d55bc51bdf39793
+router.get('/places/:id', (req, res, next) => {
   // req.params.id will be set based on the `:id` in the route
-  Item.findById(req.params.id)
-    .populate({
-      path: 'owner reviews',
-      populate: {
-        path: 'owner'
+  Place.findById(req.params.id)
+    .then(handle404)
+    .then(place => place.place_id)
+    .then(placeId =>
+      axios({
+        method: 'GET',
+        url: 'https://api.foursquare.com/v2/venues/' + placeId + '/menu',
+        params: {
+          client_id: process.env.CLIENT_ID,
+          v: '20190425',
+          client_secret: process.env.CLIENT_SECRET
+        }
+      }))
+    .then(menuresponse => {
+      const hello = menuresponse.data.response.menu.menus
+      const count = menuresponse.data.response.menu.menus.count
+      let array = []
+      if (count > 0) {
+        hello.items[0].entries.items.map(section => {
+          section.entries.items.map(item => array.push(item))
+        })
+        return array
+        // return menuresponse.data.response.menu.menus.items[0].entries.items[0].entries.items
+      } else {
+        return []
       }
     })
-    // .execPopulate()
-    // if `findById` is succesful, respond with 200 and "item" JSON
-    .then(item => {
-      res.status(200).json({ item: item.toObject() })
+    .then(array => {
+      return array.map(item => {
+        return Item.findOne({item_id: item.entryId}).exec()
+          .then((result) => {
+            if (result) {
+              return result
+            } else {
+              return Item.create({
+                name: item.name,
+                item_id: item.entryId
+              })
+                .then(item => {
+                  return Place.findById(req.params.id).exec()
+                    .then(place => {
+                      place.items.push(item)
+                      return place.save()
+                    })
+                })
+            }
+          })
+      })
     })
-    // if an error occurs, pass it to the handler
+    .then(newArray => {
+      Promise.all(newArray).then(thisarray => {
+        console.log('this', thisarray)
+        Place.findById(req.params.id)
+          .populate({
+            path: 'reviews items',
+            populate: {
+              path: 'reviews'
+            }
+          }).exec()
+          .then(place => {
+            console.log(place)
+            res.status(200).json({place: place.toObject()})
+          })
+      })
+    })
     .catch(next)
 })
 
 // CREATE
 // POST /items
+// Create an item & add it to the menu
 router.post('/places/:id/items', requireToken, (req, res, next) => {
   const placeId = req.params.id
   req.body.item.owner = req.user.id
@@ -79,11 +117,7 @@ router.post('/places/:id/items', requireToken, (req, res, next) => {
           place.save()
         })
         .catch(next)
-        // .then(place => res.json({place: place.toObject()}))
-        // .then(items.push(item))
-        // .then(place.save())
     })
-    // .then(Place.findById(placeId).items.push(req.body.item._id))
 
     // if an error occurs, pass it off to our error handler
     // the error handler needs the error message and the `res` object so that it
