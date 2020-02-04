@@ -85,7 +85,6 @@ router.get('/places/:id', (req, res, next) => {
     })
     .then(newArray => {
       Promise.all(newArray).then(thisarray => {
-        console.log('this', thisarray)
         Place.findById(req.params.id)
           .populate({
             path: 'reviews items',
@@ -94,7 +93,6 @@ router.get('/places/:id', (req, res, next) => {
             }
           }).exec()
           .then(place => {
-            console.log(place)
             res.status(200).json({place: place.toObject()})
           })
       })

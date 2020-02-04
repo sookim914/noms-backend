@@ -54,7 +54,6 @@ router.post('/sign-up', (req, res, next) => {
     // won't be send because of the `transform` in the User model
     .then(user => res.status(201).json({ user: user.toObject() }))
     // pass any errors along to the error handler
-    .then(console.log('here'))
     .catch(next)
 })
 
