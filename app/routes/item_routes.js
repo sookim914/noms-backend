@@ -50,6 +50,7 @@ router.get('/places/:id', (req, res, next) => {
       const hello = menuresponse.data.response.menu.menus
       const count = menuresponse.data.response.menu.menus.count
       let array = []
+      // get menu data
       if (count > 0) {
         hello.items[0].entries.items.map(section => {
           section.entries.items.map(item => array.push(item))
